@@ -12,23 +12,22 @@ class DreamsDataset:
         self.canais = None
         self.sfreq = None
         self.eventos = None
+        self.y = None
 
         self.load_data()
 
     def load_data(self):
-        print(f"edf carregado: {self.caminho_arquivo}")
 
         raw = mne.io.read_raw_edf(self.caminho_arquivo, preload=True)
 
+        self.y = raw.n_times
+
         self.sfreq = raw.info['sfreq']
         self.canais = raw.ch_names
-        print(f"canais encontrados: {self.canais}")
-        print(f"frequência de amostragem: {self.sfreq} Hz")
 
         sinais = raw.get_data()  # canais e amostras
         sinais = sinais.T  # amostras, canais
 
-        print(f"shape dos dados: {sinais.shape}")
 
         self.data = sinais
 
@@ -41,13 +40,13 @@ class DreamsDataset:
             self.eventos = None
 
     def carregar_hypnograma(self, caminho):
-        print(f"carregando hypnograma: {caminho}")
+
         with open(caminho, 'r') as file:
             linhas = file.readlines()
 
         estagios = [int(linha.strip()) for linha in linhas[1:]] 
         estagios = np.array(estagios)
-        print(f"hypnograma carregado {len(estagios)} labels")
+
         return estagios
 
     def hypnograma_para_eventos(self, estagios, sfreq):
@@ -61,7 +60,7 @@ class DreamsDataset:
             eventos.append(estagio)
 
         eventos = np.array(eventos)
-        print(f"eventos gerados: {eventos.shape[0]}")
+
         return eventos
 
     def criar_trials(self, tamanho_janela=5, sobreposicao=0):
@@ -78,10 +77,9 @@ class DreamsDataset:
 
         self.trials = np.array(trials)  
         self.labels_trials = np.zeros((self.trials.shape[0],)) 
-        print(f"Total de trials gerados: {self.trials.shape[0]}")
 
     def montar_dicionario_bciflow(self):
-        X = self.trials[:, np.newaxis, :, :] 
+        X = self.data.T[np.newaxis, np.newaxis, :, :]
         eventos_dict = {}
         if self.eventos is not None:
             eventos_dict = {
@@ -103,7 +101,7 @@ class DreamsDataset:
 
         dataset = {
             'X': X,
-            'y': None,
+            'y': self.y,
             'sfreq': self.sfreq,
             'y_dict': None,
             'events': eventos_dict,
@@ -111,6 +109,6 @@ class DreamsDataset:
             'ch_names': self.canais,
             'tmin': 0.0
         }
-
+        
         return dataset
 #criar eventos_dict
