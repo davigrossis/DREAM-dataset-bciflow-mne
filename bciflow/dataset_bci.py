@@ -20,7 +20,6 @@ class DreamsDataset:
 
         raw = mne.io.read_raw_edf(self.caminho_arquivo, preload=True)
 
-        self.y = raw.n_times
 
         self.sfreq = raw.info['sfreq']
         self.canais = raw.ch_names
@@ -31,13 +30,13 @@ class DreamsDataset:
 
         self.data = sinais
 
-        # Se tiver o arquivo do hypnograma, carrega os eventos
+        # Se tiver o arquivo do hypnograma, carrega os y
         if self.caminho_hypnograma and os.path.exists(self.caminho_hypnograma):
             self.labels = self.carregar_hypnograma(self.caminho_hypnograma)
-            self.eventos = self.hypnograma_para_eventos(self.labels, self.sfreq)
+            self.y = self.hypnograma_para_y(self.labels, self.sfreq)
         else:
             self.labels = np.array([0])
-            self.eventos = None
+            self.y = None
 
     def carregar_hypnograma(self, caminho):
 
@@ -49,19 +48,19 @@ class DreamsDataset:
 
         return estagios
 
-    def hypnograma_para_eventos(self, estagios, sfreq):
-        eventos = []
+    def hypnograma_para_y(self, estagios, sfreq):
+        y = []
         duracao_epoca = 5
 
         for idx, estagio in enumerate(estagios):
             tempo_inicio = idx * duracao_epoca
             amostra_inicio = int(tempo_inicio * sfreq)
 
-            eventos.append(estagio)
+            y.append(estagio)
 
-        eventos = np.array(eventos)
+        y = np.array(y)
 
-        return eventos
+        return y
 
     def criar_trials(self, tamanho_janela=5, sobreposicao=0):
         amostras_por_janela = int(tamanho_janela * self.sfreq)
@@ -80,17 +79,8 @@ class DreamsDataset:
 
     def montar_dicionario_bciflow(self):
         X = self.data.T[np.newaxis, np.newaxis, :, :]
-        eventos_dict = {}
-        if self.eventos is not None:
-            eventos_dict = {
-                "Sleep Stages": self.eventos.tolist()
-            }
-        else:
-            eventos_dict = {
-                "Task": [i for i in range(len(self.labels_trials))]
-            }
 
-        events_dict = { 
+        y_dict = { 
             0: "Unknown",
             1: "Stage 1",
             2: "Stage 2",
@@ -103,12 +93,10 @@ class DreamsDataset:
             'X': X,
             'y': self.y,
             'sfreq': self.sfreq,
-            'y_dict': None,
-            'events': eventos_dict,
-            'events_dict': events_dict,
+            'y_dict': y_dict,
+            'events': None,
             'ch_names': self.canais,
             'tmin': 0.0
         }
         
         return dataset
-#criar eventos_dict

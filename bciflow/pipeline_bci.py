@@ -17,7 +17,6 @@ print("EEG signals shape:", data['X'].shape)
 print("Labels:", data['y'])
 print("Class dictionary:", data["y_dict"])
 print("Events:", np.array(data["events"]))
-print("Events dict", data["events_dict"])
 print("Channel names:", data["ch_names"])
 print("Sampling frequency (Hz):", data["sfreq"])
 print("Start time (s):", data["tmin"])
@@ -27,3 +26,5 @@ print("Start time (s):", data["tmin"])
 #5 = vigília (wake),
 #4 = REM,(Estagio dos sonhos)
 #3, 2, 1, 0 (s1,s2,s3,s4Sono profundo) = estágios de sono (variam entre R&K e AASM),
+#events = null , events_dict = null
+#events = y , events_dict = y_dict
